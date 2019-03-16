@@ -52,7 +52,7 @@ def number_crunch(inventory_id):
     scaler = StandardScaler()
     scaler.fit(processed_feature_df)
     processed_feature_df = pd.DataFrame(scaler.transform(processed_feature_df), columns = feature_df.columns)
-    nbrs = NearestNeighbors(n_neighbors=4, algorithm='ball_tree').fit(processed_feature_df)
+    nbrs = NearestNeighbors(n_neighbors=6, algorithm='ball_tree').fit(processed_feature_df)
     distances, indices = nbrs.kneighbors(processed_feature_df)
     distances = pd.DataFrame(distances).drop([0], axis = 1)
     indices = pd.DataFrame(indices).drop([0],axis = 1)
@@ -125,7 +125,11 @@ def get_car_info(car_id):
 
 @app.route("/api/v1/similar/<car_id>", methods = ['GET', 'POST'])
 def get_similar_car(car_id):
-    arr = indices.loc[indices["car_id"] == car_id][[1, 2, 3]]
+    import sys
+
+    print(distances, file=sys.stderr)
+
+    arr = indices.loc[indices["car_id"] == int(car_id)][[1, 2, 3, 5]]
     return Response(json.dumps({"indices": arr.loc[0].apply(lambda x: indices.loc[x]["car_id"]).tolist(),
                                 "distances": arr.loc[0].apply(lambda x: distances.loc[x]["car_id"]).tolist()}))
 
