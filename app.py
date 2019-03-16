@@ -129,14 +129,14 @@ def get_similar_car(car_id):
 
     print(distances, file=sys.stderr)
 
-    arr = indices.loc[indices["car_id"] == int(car_id)][[1, 2, 3, 4, 5]]
+    arr = indices.loc[indices["car_id"] == int(car_id)][[1, 2, 3]]
     return Response(json.dumps({"indices": arr.loc[0].apply(lambda x: indices.loc[x]["car_id"]).tolist(),
-                                "distances": distances[[1, 2, 3, 4, 5]][distances["car_id"] == 5204244].loc[0].tolist()}))
+                                "distances": distances[[1, 2, 3]][distances["car_id"] == 5204244].loc[0].tolist()}))
 
 def most_common(lst):
     return max(set(lst), key=lst.count)
 
-@app.route("/api/v1/dashboard/<user_id>", method = ['GET', 'POST'])
+@app.route("/api/v1/dashboard/<user_id>", methods = ['GET', 'POST'])
 def get_dashboard_info(user_id):
     cars = pickle.loads(r.get(user_id))
     prices = []
