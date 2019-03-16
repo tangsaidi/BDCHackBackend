@@ -133,6 +133,48 @@ def get_similar_car(car_id):
     return Response(json.dumps({"indices": arr.loc[0].apply(lambda x: indices.loc[x]["car_id"]).tolist(),
                                 "distances": distances[[1, 2, 3, 4, 5]][distances["car_id"] == 5204244].loc[0].tolist()}))
 
+def most_common(lst):
+    return max(set(lst), key=lst.count)
+
+@app.route("/api/v1/dashboard/<user_id>", method = ['GET', 'POST'])
+def get_dashboard_info(user_id):
+    cars = pickle.loads(r.get(user_id))
+    prices = []
+    colors = []
+    state = []
+    capacity = []
+    drive_train = []
+    for x in cars:
+        with conn:
+            cur = conn.cursor()
+            query = "SELECT price, inventory_color, new, passengers, drive_train FROM car_inventory WHERE car_id={0}".format(x['car_id'])
+            cur.execute(query)
+
+            rows = cur.fetchall()
+            prices.append(float(rows[0]['price']))
+            colors.append(rows[0]['inventory_color'])
+            state.append(rows[0]['new'])
+            capacity.append(rows[0]['passengers'])
+            if(rows[0]['drive_train'] != None): drive_train.append(rows[0]['drive_train'])
+
+    std_dev = float(pd.DataFrame({'Column1':prices}).std())
+    mean = float(pd.DataFrame({'Column1':prices}).mean())
+
+    if len(colors) == 0: colors.append('N/A')
+    if len(state) == 0: state.append('N/A')
+    if len(capacity) == 0: capacity.append('N/A')
+    if len(drive_train) == 0: drive_train.append('N/A')
+
+    preferred_state = 'new' if most_common(state) == 1 else 'used'
+
+    return Response(json.dumps({  'minbudget':"{:.2f}".format(mean - std_dev),
+              'maxbudget':"{:.2f}".format(mean + std_dev),
+              'color':most_common(colors),
+              'state':preferred_state,
+              'capacity':most_common(capacity),
+              'drive_train':most_common(drive_train)
+            }))
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0')
