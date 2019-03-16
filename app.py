@@ -4,7 +4,7 @@ import pandas as pd
 import json
 from sklearn.preprocessing import StandardScaler
 
-
+import numpy as np
 import pymysql.cursors
 
 conn = pymysql.connect(host='hackathon-db.bdc.n360.io',
@@ -19,6 +19,7 @@ conn = pymysql.connect(host='hackathon-db.bdc.n360.io',
 import redis
 import time
 import pickle
+import decimal
 from sklearn.neighbors import NearestNeighbors
 
 r = redis.Redis(host='localhost', port=6379, db=0)
@@ -108,7 +109,18 @@ def get_car_info(car_id):
 
         rows = cur.fetchall()
         res = pd.DataFrame(rows)
-    return Response(json.dumps(res.loc[0].to_dict()),  mimetype='application/json')
+        
+    diction = res.loc[0].to_dict()
+
+    for k, v in diction.items():
+        if (isinstance(v, np.int64)):
+            diction[k] = int(v)
+        if (isinstance(v, pd.Timestamp)):
+            diction[k] = v.strftime('%Y-%m-%d')
+        if (isinstance(v, decimal.Decimal)):
+            diction[k] = float(v)
+        
+    return Response(json.dumps(diction),  mimetype='application/json')
     
 
 @app.route("/api/v1/similar/<car_id>", methods = ['GET', 'POST'])
